@@ -1,6 +1,6 @@
 import java.util.*;
 import controlP5.*;
-int unit = 10;
+int unit = 5;
 boolean makeTerrain = true;
 PShape coloredSquare;
 PShape triangleFan;
@@ -196,28 +196,26 @@ void setup(){
 void draw(){
   
   controller.Update();
+  
+    
   background(128);
-  
-  colorMode(RGB);
-  for(int i = -10; i < 11; i ++){
-    stroke(255);
-    if(i==0)
-      stroke(0,0,255);
-    line(i*10,0,100, i*10,0,-100);
-    if(i==0)
-      stroke(255,0,0);
-    line(100,0,i*10, -100,0,i*10);
-  }
-  
-  if(makeTerrain){
+  //   for(int i = -10; i < 11; i ++){
+  //  stroke(255);
+  //  if(i==0)
+  //    stroke(0,0,255);
+  //  line(i*10,0,100, i*10,0,-100);
+  //  if(i==0)
+  //    stroke(255,0,0);
+  //  line(100,0,i*10, -100,0,i*10);
+  //}
+   colorMode(RGB);
      for(int i = 0; i < vertData.size(); i++){
       pushMatrix();
       translate(vertData.get(i).x*unit, vertData.get(i).y*unit, vertData.get(i).z*unit);
       sphere(5);
       popMatrix();
     }
-    makeTerrain = false;
-  }
+  
   
   camera();
   perspective();
@@ -246,31 +244,20 @@ void keyPressed(){
   println(keyCode);
 }
 
-//public void rows(int val){
-//   vertData.clear();
-//  for(int i = (int)-(terrainSize.getValue()/2); i < terrainSize.getValue()/2; i+=(terrainSize.getValue()/rows.getValue())){
-//     for(int j =(int)-(terrainSize.getValue()/2); j < terrainSize.getValue()/2; j+=(terrainSize.getValue()/columns.getValue())){
-//       vertData.add(new PVector(i,0,j));
-//     }  
-//   }
-//   makeTerrain = true;
-//}
+public void rows(int val){
+  
+}
 
-//public void columns(int val){
-//    vertData.clear();
-//  for(int i = (int)-(terrainSize.getValue()/2); i < terrainSize.getValue()/2; i+=(terrainSize.getValue()/rows.getValue())){
-//     for(int j =(int)-(terrainSize.getValue()/2); j < terrainSize.getValue()/2; j+=(terrainSize.getValue()/columns.getValue())){
-//       vertData.add(new PVector(i,0,j));
-//     }  
-//   }
-//   makeTerrain = true;
-//}
+public void columns(int val){
+}
 
 public void terrainSize(int val){
-  println(val);
-    vertData.clear();
-  for(int i = (int)-(val/2); i < val/2; i+=(val/rows.getValue())){
-     for(int j =(int)-(val/2); j < val/2; j+=(val/columns.getValue())){
+}
+
+public void generate(){
+   vertData.clear();
+  for(int i = (int)-(terrainSize.getValue()/2); i < terrainSize.getValue()/2; i+=(int)(terrainSize.getValue()/rows.getValue())){
+     for(int j =(int)-(terrainSize.getValue()/2); j < terrainSize.getValue()/2; j+=(int)(terrainSize.getValue()/columns.getValue())){
        vertData.add(new PVector(i,0,j));
      }  
    }
