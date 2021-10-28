@@ -1,11 +1,7 @@
 import java.util.*;
 import controlP5.*;
 int unit = 5;
-boolean makeTerrain = true;
-PShape coloredSquare;
-PShape triangleFan;
-PShape hexFan;
-PShape monster;
+PShape terrain; 
 Slider rows;
 Slider columns;
 Slider terrainSize;
@@ -124,16 +120,17 @@ void setup(){
                             .setPosition(20,20)
                             .setHeight(15)
                             .setWidth(160)
-                            .setValue(1)
+                            .setValue(2)
                             .setCaptionLabel("ROWS");
-                            
+                    
+         
    columns = cp5.addSlider("columns")
                             .setMin(1)
                             .setMax(100)
                             .setPosition(20,50)
                             .setHeight(15)
                             .setWidth(160)
-                            .setValue(1)
+                            .setValue(2)
                             .setCaptionLabel("COLUMNS");
                             
     terrainSize = cp5.addSlider("terrainSize")
@@ -208,11 +205,12 @@ void draw(){
   //    stroke(255,0,0);
   //  line(100,0,i*10, -100,0,i*10);
   //}
+   shape(terrain, 0,0);  
+  
    colorMode(RGB);
      for(int i = 0; i < vertData.size(); i++){
       pushMatrix();
       translate(vertData.get(i).x*unit, vertData.get(i).y*unit, vertData.get(i).z*unit);
-      sphere(5);
       popMatrix();
     }
   
@@ -255,12 +253,56 @@ public void terrainSize(int val){
 }
 
 public void generate(){
-   vertData.clear();
-  for(int i = (int)-(terrainSize.getValue()/2); i < terrainSize.getValue()/2; i+=(int)(terrainSize.getValue()/rows.getValue())){
-     for(int j =(int)-(terrainSize.getValue()/2); j < terrainSize.getValue()/2; j+=(int)(terrainSize.getValue()/columns.getValue())){
-       vertData.add(new PVector(i,0,j));
+  vertData.clear();
+  for(float i = -(terrainSize.getValue()/2); i <= terrainSize.getValue()/2; i+=(terrainSize.getValue()/rows.getValue())){
+     for(float j =-(terrainSize.getValue()/2); j <= terrainSize.getValue()/2; j+=(terrainSize.getValue()/columns.getValue())){
+       vertData.add(new PVector(j,0,i));
      }  
    }
+   println(vertData);
+   triangleData.clear();
+   boolean flip = true;
+   int startOfRow = 0;
+   int startIndex = 0;
+   int numCol = (int)columns.getValue();
+   int vert2 = -1;
+   int vert3 = -1;
+   //println(vertData.size());
+   while(vert3 < vertData.size()-1){
+     //println(startIndex);
+     if(flip){
+       vert2 = startIndex+1;
+       vert3 = startIndex + numCol + 1;
+       triangleData.add(startIndex);
+       triangleData.add(vert2);
+       triangleData.add(vert3);
+       startIndex = vert3;
+       flip = !flip;
+     }
+     if(!flip){
+       vert2 = startIndex-numCol;
+       vert3 = startIndex + 1;
+       triangleData.add(startIndex);
+       triangleData.add(vert2);
+       triangleData.add(vert3);
+       startIndex = startIndex-numCol;
+       flip = !flip;
+     }
+     if(vert2 - startOfRow >= numCol && flip){
+       startIndex+=1;
+       startOfRow = startIndex;
+     }
+   }
+   println(triangleData);
+   terrain = createShape();  
+   terrain.beginShape(TRIANGLE);
+   terrain.fill(255);
+   for(int i =0; i < triangleData.size(); i++){
+     //println(i);
+     terrain.vertex(vertData.get(triangleData.get(i)).x, 0, vertData.get(triangleData.get(i)).z);
+   }
+   terrain.endShape();
+   
 }
 
 void controlEvent(ControlEvent theEvent) {
