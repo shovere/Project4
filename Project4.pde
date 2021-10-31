@@ -1,7 +1,9 @@
+
 import java.util.*;
 import controlP5.*;
-int unit = 5;
+float unit = 1.5f;
 PShape terrain; 
+String imgName = "";
 Slider rows;
 Slider columns;
 Slider terrainSize;
@@ -22,7 +24,7 @@ ArrayList<Integer> triangleData = new ArrayList<Integer>();
 class CameraController {
    PVector position; 
    PVector target;
-   float FOV = 90;
+   float FOV = 50;
    float theta = 0;
    float phi = 0;
    float radius;
@@ -120,7 +122,7 @@ void setup(){
                             .setPosition(20,20)
                             .setHeight(15)
                             .setWidth(160)
-                            .setValue(2)
+                            .setValue(10)
                             .setCaptionLabel("ROWS");
                     
          
@@ -130,7 +132,7 @@ void setup(){
                             .setPosition(20,50)
                             .setHeight(15)
                             .setWidth(160)
-                            .setValue(2)
+                            .setValue(10)
                             .setCaptionLabel("COLUMNS");
                             
     terrainSize = cp5.addSlider("terrainSize")
@@ -139,7 +141,7 @@ void setup(){
                             .setPosition(20,80)
                             .setHeight(15)
                             .setWidth(160)
-                            .setValue(20)
+                            .setValue(30)
                             .setCaptionLabel("TERRAIN SIZE");
                             
     heightModifier = cp5.addSlider("heightModifier")
@@ -169,8 +171,7 @@ void setup(){
     loadFromFile = cp5.addTextfield("load from file")
               .setPosition(20, 160)
               .setSize(200, 30)
-              .setAutoClear(false)
-              .setValue("");
+              .setValue("terrain0.png");
               
     strokeActive = cp5.addToggle("stroke active")
                  .setPosition(300, 20)
@@ -194,7 +195,7 @@ void draw(){
   
   controller.Update();
   
-    
+  imgName = loadFromFile.getText();
   background(128);
   //   for(int i = -10; i < 11; i ++){
   //  stroke(255);
@@ -253,13 +254,49 @@ public void terrainSize(int val){
 }
 
 public void generate(){
+  println(imgName);
   vertData.clear();
-  for(float i = -(terrainSize.getValue()/2); i <= terrainSize.getValue()/2; i+=(terrainSize.getValue()/rows.getValue())){
-     for(float j =-(terrainSize.getValue()/2); j <= terrainSize.getValue()/2; j+=(terrainSize.getValue()/columns.getValue())){
-       vertData.add(new PVector(j,0,i));
+  
+  try{
+   String img = "data/" + imgName;
+    //println(img);
+    PImage terrainImg = loadImage(img);
+    //println(terrainImg.width);
+    //println((int)columns.getValue());
+    //println((int)rows.getValue());
+   float i = -((int)rows.getValue())/2.0f;
+   float j = -((int)columns.getValue())/2.0f;
+   int l = 0;
+   int k = 0;
+    while( i <= (((int)rows.getValue())/2.0f) + .1){
+     while( j <= (((int)columns.getValue())/2.0f) + .1){
+       int x_index = (int)map(l, 0, columns.getValue()+1, 0, terrainImg.width);
+       int y_index = (int)map(k,0,rows.getValue()+1, 0, terrainImg.height);
+       color c = terrainImg.get(x_index, y_index);
+       float heightFromColor = map(red(c), 0,255, 0,-1);
+       vertData.add(new PVector(i*(terrainSize.getValue()/((int)rows.getValue())),heightFromColor,j*(terrainSize.getValue()/((int)columns.getValue()))));
+        j++;
+        k++;
      }  
+     i++;
+     l++;
+     j = -((int)columns.getValue())/2.0f;
+     k=0;
    }
-   println(vertData);
+  }
+   catch(Exception e){
+     float i = -((int)rows.getValue())/2.0f;
+     float j = -((int)columns.getValue())/2.0f;
+      while( i <= (((int)rows.getValue())/2.0f) + .1){
+       while( j <= (((int)columns.getValue())/2.0f) + .1){
+         vertData.add(new PVector(i*(terrainSize.getValue()/((int)rows.getValue())),0,j*(terrainSize.getValue()/((int)columns.getValue()))));
+          j++;
+       }  
+       i++;
+       j = -((int)columns.getValue())/2.0f;
+     }
+   }
+   //println(vertData);
    triangleData.clear();
    boolean flip = true;
    int startOfRow = 0;
@@ -293,13 +330,13 @@ public void generate(){
        startOfRow = startIndex;
      }
    }
-   println(triangleData);
+   //println(triangleData);
    terrain = createShape();  
    terrain.beginShape(TRIANGLE);
    terrain.fill(255);
    for(int i =0; i < triangleData.size(); i++){
      //println(i);
-     terrain.vertex(vertData.get(triangleData.get(i)).x, 0, vertData.get(triangleData.get(i)).z);
+     terrain.vertex(vertData.get(triangleData.get(i)).x*unit, vertData.get(triangleData.get(i)).y*unit*heightModifier.getValue(), vertData.get(triangleData.get(i)).z*unit);
    }
    terrain.endShape();
    
