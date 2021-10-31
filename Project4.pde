@@ -14,9 +14,17 @@ Textfield loadFromFile;
 Toggle strokeActive;
 Toggle colorActive;
 Toggle blendActive;
+boolean strokeSwap = false;
+boolean colorSwap = false;
+boolean blendSwap = false;
 CameraController controller = new CameraController();
 RadioButton cameraMovement;
 ControlP5 cp5;
+color snow = color(255,255,255);
+color rock = color(135,135,135);
+color grass = color(143,170,64);
+color dirt = color(160,128,84);
+color water = color(0,75,200);
 
 ArrayList<PVector> vertData = new ArrayList<PVector>();
 ArrayList<Integer> triangleData = new ArrayList<Integer>();
@@ -104,18 +112,6 @@ class CameraController {
 void setup(){
   size(1600, 1000, P3D);
   cp5 = new ControlP5(this);
-  cameraMovement = cp5.addRadioButton("Camera Movement")
-                      .setPosition(200,200)
-                      .setSize(40,40)
-                      .setColorForeground(color(120))
-                      .setColorActive(color(255))
-                      .setColorLabel(color(255))
-                      .setItemsPerRow(1)
-                      .setSpacingColumn(50)
-                      .addItem("Camera Rotate (press num1)",1)
-                      .addItem("Click and Drag (press num2)",2);
-                      
-   cameraMovement.activate(0);
    rows =  cp5.addSlider("rows")
                             .setMin(1)
                             .setMax(100)
@@ -150,7 +146,7 @@ void setup(){
                             .setPosition(300,80)
                             .setHeight(15)
                             .setWidth(160)
-                            .setValue(-5)
+                            .setValue(1)
                             .setCaptionLabel("HEIGHT MODIFIER");
                             
     snowThreshold = cp5.addSlider("snowThreshold")
@@ -171,11 +167,13 @@ void setup(){
     loadFromFile = cp5.addTextfield("load from file")
               .setPosition(20, 160)
               .setSize(200, 30)
-              .setValue("terrain0.png");
+              .setValue("terrain0")
+              .setAutoClear(false);
               
     strokeActive = cp5.addToggle("stroke active")
                  .setPosition(300, 20)
-                 .setSize(70,30);
+                 .setSize(70,30)
+                 .setValue(1.0);
                  
     colorActive = cp5.addToggle("color active")
                  .setPosition(400, 20)
@@ -187,8 +185,7 @@ void setup(){
  controller.movementType = 1;
                       
  cp5.setAutoDraw(false);
- 
-
+ generate();
 }
 
 void draw(){
@@ -196,26 +193,20 @@ void draw(){
   controller.Update();
   
   imgName = loadFromFile.getText();
-  background(128);
-  //   for(int i = -10; i < 11; i ++){
-  //  stroke(255);
-  //  if(i==0)
-  //    stroke(0,0,255);
-  //  line(i*10,0,100, i*10,0,-100);
-  //  if(i==0)
-  //    stroke(255,0,0);
-  //  line(100,0,i*10, -100,0,i*10);
-  //}
-   shape(terrain, 0,0);  
-  
-   colorMode(RGB);
-     for(int i = 0; i < vertData.size(); i++){
-      pushMatrix();
-      translate(vertData.get(i).x*unit, vertData.get(i).y*unit, vertData.get(i).z*unit);
-      popMatrix();
-    }
-  
-  
+  background(0);
+  shape(terrain, 0,0);
+  if(strokeSwap != strokeActive.getState()){
+    strokeSwap = strokeActive.getState();
+    handleShapeChanges();
+  }
+  else if(colorSwap != colorActive.getState()){
+    colorSwap = colorActive.getState();
+    handleShapeChanges();
+  }
+  else if(blendSwap != blendActive.getState()){
+    blendSwap = blendActive.getState();
+    handleShapeChanges();
+  }
   camera();
   perspective();
   cp5.draw();
@@ -227,22 +218,6 @@ void mouseWheel(MouseEvent event){
   controller.Zoom(e);
 }
 
-void keyPressed(){
-  //spacebar
-  if(keyCode == 32){
-    controller.cycleTarget();
-  }
-  if(keyCode == 49){
-    cameraMovement.activate(0);
-    controller.movementType = 0;
-  }
-  if(keyCode == 50){
-    cameraMovement.activate(1);
-    controller.movementType = 1;
-  }
-  println(keyCode);
-}
-
 public void rows(int val){
   
 }
@@ -251,52 +226,24 @@ public void columns(int val){
 }
 
 public void terrainSize(int val){
+
+}
+
+public void heightModifier(float val){
+  handleVertChanges();
+  handleShapeChanges();
+}
+
+public void snowThreshold(float val){
+  handleVertChanges();
+  handleShapeChanges();
 }
 
 public void generate(){
-  println(imgName);
-  vertData.clear();
-  
-  try{
-   String img = "data/" + imgName;
-    //println(img);
-    PImage terrainImg = loadImage(img);
-    //println(terrainImg.width);
-    //println((int)columns.getValue());
-    //println((int)rows.getValue());
-   float i = -((int)rows.getValue())/2.0f;
-   float j = -((int)columns.getValue())/2.0f;
-   int l = 0;
-   int k = 0;
-    while( i <= (((int)rows.getValue())/2.0f) + .1){
-     while( j <= (((int)columns.getValue())/2.0f) + .1){
-       int x_index = (int)map(l, 0, columns.getValue()+1, 0, terrainImg.width);
-       int y_index = (int)map(k,0,rows.getValue()+1, 0, terrainImg.height);
-       color c = terrainImg.get(x_index, y_index);
-       float heightFromColor = map(red(c), 0,255, 0,-1);
-       vertData.add(new PVector(i*(terrainSize.getValue()/((int)rows.getValue())),heightFromColor,j*(terrainSize.getValue()/((int)columns.getValue()))));
-        j++;
-        k++;
-     }  
-     i++;
-     l++;
-     j = -((int)columns.getValue())/2.0f;
-     k=0;
-   }
-  }
-   catch(Exception e){
-     float i = -((int)rows.getValue())/2.0f;
-     float j = -((int)columns.getValue())/2.0f;
-      while( i <= (((int)rows.getValue())/2.0f) + .1){
-       while( j <= (((int)columns.getValue())/2.0f) + .1){
-         vertData.add(new PVector(i*(terrainSize.getValue()/((int)rows.getValue())),0,j*(terrainSize.getValue()/((int)columns.getValue()))));
-          j++;
-       }  
-       i++;
-       j = -((int)columns.getValue())/2.0f;
-     }
-   }
+  //println(imgName);
    //println(vertData);
+   
+  handleVertChanges();
    triangleData.clear();
    boolean flip = true;
    int startOfRow = 0;
@@ -331,19 +278,121 @@ public void generate(){
      }
    }
    //println(triangleData);
-   terrain = createShape();  
+   handleShapeChanges();
+}
+
+public void handleVertChanges(){
+   vertData.clear();
+  try{
+   String img = "data/" + imgName + ".png";
+    //println(img);
+    PImage terrainImg = loadImage(img);
+    //println(terrainImg.width);
+    //println((int)columns.getValue());
+    //println((int)rows.getValue());
+   float i = -((int)rows.getValue())/2.0f;
+   float j = -((int)columns.getValue())/2.0f;
+   int l = 0;
+   int k = 0;
+    while( i <= (((int)rows.getValue())/2.0f) + .1){
+     while( j <= (((int)columns.getValue())/2.0f) + .1){
+       int x_index = (int)map(l, 0, columns.getValue()+1, terrainImg.width, 00);
+       int y_index = (int)map(k,0,rows.getValue()+1, 0, terrainImg.height);
+       color c = terrainImg.get(x_index, y_index);
+       float heightFromColor = map(red(c), 0,255, 0,-1);
+       vertData.add(new PVector(i*(terrainSize.getValue()/((int)rows.getValue())),heightFromColor,j*(terrainSize.getValue()/((int)columns.getValue()))));
+        j++;
+        l++;
+     }  
+     i++;
+     k++;
+     j = -((int)columns.getValue())/2.0f;
+     l=0;
+   }
+  }
+   catch(Exception e){
+     float i = -((int)rows.getValue())/2.0f;
+     float j = -((int)columns.getValue())/2.0f;
+      while( i <= (((int)rows.getValue())/2.0f) + .1){
+       while( j <= (((int)columns.getValue())/2.0f) + .1){
+         vertData.add(new PVector(i*(terrainSize.getValue()/((int)rows.getValue())),0,j*(terrainSize.getValue()/((int)columns.getValue()))));
+          j++;
+       }  
+       i++;
+       j = -((int)columns.getValue())/2.0f;
+     }
+   }
+   
+ }
+
+void handleShapeChanges(){
+terrain = createShape();  
    terrain.beginShape(TRIANGLE);
-   terrain.fill(255);
    for(int i =0; i < triangleData.size(); i++){
      //println(i);
+     float relativeHeight = vertData.get(triangleData.get(i)).y*heightModifier.getValue()/-snowThreshold.getValue();
+     //relativeHeight = map(relativeHeight, 0,-5.0, 0, 1.0);
+     //println(relativeHeight);
+     if(strokeActive.getValue() == 1){
+       terrain.stroke(0);  
+     }
+     else {
+       terrain.noStroke();
+     }
+     if(colorActive.getValue() == 1){
+        if(relativeHeight > 0.8){
+          if(blendActive.getValue() == 1.0f){
+            float ratio = (relativeHeight-0.8f)/0.2f;
+            terrain.fill(lerpColor(rock,snow, ratio));
+          }
+          else {
+            terrain.fill(snow);
+          }
+        }
+        else if(relativeHeight > 0.4 && relativeHeight <= .8){
+          if(blendActive.getValue() == 1.0f){
+            float ratio = (relativeHeight-0.4f)/0.4f;
+            terrain.fill(lerpColor(grass,rock, ratio));
+          }
+          else {
+            terrain.fill(rock);
+          }
+        }
+        else if(relativeHeight > 0.2 && relativeHeight <= .4){
+          if(blendActive.getValue() == 1.0f){
+            float ratio = (relativeHeight-0.2f)/0.2f;
+            terrain.fill(lerpColor(dirt,grass, ratio));
+          }
+          else {
+            terrain.fill(grass);
+          }
+        }
+        else{
+          if(blendActive.getValue() == 1.0f){
+            float ratio = relativeHeight/0.2f;
+            terrain.fill(lerpColor(water,dirt, ratio));
+          }
+          else {
+            terrain.fill(water);
+          }
+        }
+     }else {
+       terrain.fill(255);
+     }
      terrain.vertex(vertData.get(triangleData.get(i)).x*unit, vertData.get(triangleData.get(i)).y*unit*heightModifier.getValue(), vertData.get(triangleData.get(i)).z*unit);
    }
    terrain.endShape();
-   
 }
 
 void controlEvent(ControlEvent theEvent) {
   if(theEvent.isFrom(cameraMovement)) {
     print("got an event from "+theEvent.getName()+"\t");
  }
+}
+
+void keyPressed(){
+  if(keyCode == 10){
+    generate();
+  }
+  println(keyCode);
 }
